@@ -22,6 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
+
 @Log
 @Component
 public class JwtFilter extends OncePerRequestFilter {
@@ -40,22 +42,21 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal( HttpServletRequest request,
                                      HttpServletResponse response,
                                      FilterChain filterChain         ) throws ServletException, IOException {
-        Authentication authentication= authenticationManager.authenticate(new UsernamePasswordAuthenticationToken("jetbrainforlicense10@gmail.com","s(&ingeD!&Ncd!E"));
-        if(authentication.isAuthenticated())log.info("AuthenticationManager works well can find manager : "+authentication.getPrincipal());
-        String token = request.getHeader("Authorization");
+
+    String token = request.getHeader("Authorization");
 
         if(token!=null && token.startsWith("Bearer ")){
             String username = jwtProvider.getUsername(token.substring(7));
             if(username!=null){
 
-                for (User user : userRepo.findAll()) {
-                    if(passwordEncoder.matches(username,user.getEmail())){
+                Optional<User> optionalUser = userRepo.findByEmail(username);
+                if(optionalUser.isPresent()){
 
-                        UserDetails userDetails = authService.loadUserByUsername(user.getEmail());
+                        UserDetails userDetails = authService.loadUserByUsername(username);
                         log.info("Token is correct");
-                        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails, username, userDetails.getAuthorities());
+                        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                         SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-                    }
+
                 }
 
 

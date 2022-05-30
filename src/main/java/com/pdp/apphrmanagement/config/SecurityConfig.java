@@ -46,7 +46,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .httpBasic().disable()
                 .authorizeRequests()
                 .antMatchers("/api/auth/login", "/api/auth/verifyEmail",
-                        "/api/auth/home", "/api/auth/test", "/api/auth/all","/swagger-ui","/api/auth/addManager","/api/auth/addEmployee").permitAll()
+                        "/api/auth/home", "/api/auth/test", "/api/auth/all","/swagger-ui","/swagger-ui.html","/swagger-ui/index.html","/api/auth/addManager","/api/auth/addEmployee").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
@@ -57,8 +57,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Bean
     @Override
-
-
     public AuthenticationManager authenticationManagerBean() throws Exception {
         return super.authenticationManagerBean();
     }

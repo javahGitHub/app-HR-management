@@ -1,25 +1,33 @@
 package com.pdp.apphrmanagement.controller;
 
 import com.pdp.apphrmanagement.entity.User;
+import com.pdp.apphrmanagement.entity.enums.RoleEnum;
 import com.pdp.apphrmanagement.payload.LoginDto;
 import com.pdp.apphrmanagement.payload.RegisterDto;
 import com.pdp.apphrmanagement.repository.UserRepo;
 import com.pdp.apphrmanagement.service.AuthService;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import javax.annotation.security.RolesAllowed;
 import java.util.Optional;
 import java.util.UUID;
 
 @Log
 @RestController
+@EnableGlobalMethodSecurity( prePostEnabled = true)
 @RequestMapping("/api/auth")
 public class AuthController {
 
@@ -28,20 +36,32 @@ public class AuthController {
     @Autowired
     UserRepo userRepo;
     @Autowired
+
+
+
+
     PasswordEncoder passwordEncoder;
     @Autowired
     AuthenticationManager authenticationManager;
 
-    @PostMapping("/addManager")
+
+    @PostMapping("/manager/add")
     public ResponseEntity<?> addManager(@RequestBody RegisterDto registerDto){
       return authService.addManagerByDirector(registerDto);
     }
 
 
-    @PostMapping("/addEmployee")
+    @PostMapping("/employee/add")
     public ResponseEntity<?> addEmployee(@RequestBody RegisterDto registerDto){
+
         return authService.addEmployeeByManager(registerDto);
     }
+
+
+
+
+
+
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto loginDto){
@@ -55,30 +75,26 @@ public class AuthController {
 
 
 
+
+
     @GetMapping("/home")
     public ResponseEntity<?> homePage(){
-           return ResponseEntity.status(200).body("\n\nWelcome to my HR management app of big tech company\n\n");
+        return ResponseEntity.status(200).body("\n\nWelcome to my HR management app of big tech company\n\n");
     }
 
-    @PostMapping("/test")
-    public ResponseEntity<?> testPage(@RequestBody LoginDto loginDto){
 
-       log.info("start finding via UsernamePasswordAuthenticationTon=ken");
-       Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
-                loginDto.getUsername(),
-               loginDto.getPassword()));
-       log.info("end finding via UsernamePasswordAuthenticationTon=ken");
-        boolean authenticated = authenticate.isAuthenticated();
-        if(!authenticated)
-        return ResponseEntity.status(200).body("User not found");
-        User user = (User) authenticate.getPrincipal();
-        return ResponseEntity.status(200).body(user);
 
-    }
-    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ROLE_DIRECTOR','ROLE_MANAGER','ROLE_ADMIN')")
+    @GetMapping("/infoAll")
     public ResponseEntity<?> all(){
-
-        return ResponseEntity.status(200).body(userRepo.findAll().get(0));
+        log.info(String.valueOf(SecurityContextHolder.getContext().getAuthentication()));
+        return ResponseEntity.status(200).body(userRepo.findAll());
 
     }
+
+
+
+
+
+
 }

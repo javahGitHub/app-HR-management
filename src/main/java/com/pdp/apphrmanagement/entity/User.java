@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -18,6 +19,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Data
 @Entity(name = "users")
+@EntityListeners(AuditingEntityListener.class)
 public class User implements UserDetails {
 
     @Id
@@ -37,6 +39,11 @@ public class User implements UserDetails {
     @Column(unique = true, nullable = false)
     private String password;//unique password
 
+    @ManyToOne
+    private Company company;
+
+    @Column(nullable = false)
+    private Double salary;
 
     @Column(nullable = false, updatable = false)
     @CreationTimestamp

@@ -1,5 +1,6 @@
 package com.pdp.apphrmanagement.service;
 
+import com.pdp.apphrmanagement.entity.Role;
 import com.pdp.apphrmanagement.entity.User;
 import com.pdp.apphrmanagement.entity.enums.RoleEnum;
 import com.pdp.apphrmanagement.payload.ApiResponse;
@@ -27,6 +28,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.CharacterData;
 
@@ -34,6 +36,7 @@ import javax.swing.text.Document;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @Log
@@ -70,27 +73,25 @@ public class AuthService implements UserDetailsService {
     public ResponseEntity<?> addManagerByDirector(RegisterDto registerDto) {
 
 
-        sendEmail("jr2003mit@gmail.com", "Send method is working", "It works");
-
-//
-//        boolean existByEmail = userRepo.existsByEmail(registerDto.getEmail());
-//        //Check email to be unique
-//        if (existByEmail)
-//            return ResponseEntity.status(401).body(new ApiResponse("Email already exist!", false));
-
-//        boolean existsByPassword = userRepo.existsByPassword(registerDto.getPassword());
-//        //Check password to be unique
-//        if (existsByPassword)
-//            return ResponseEntity.status(401).body(new ApiResponse("Password already exist!", false));
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
         Object principal = authentication.getPrincipal();
         log.info("Authentication principal: " + principal.toString());
+        log.info("Authentication crede: " + authentication.getCredentials().toString());
+        log.info("Authentication authorities: " + authentication.getAuthorities().toString());
+
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
-        log.info(authorities.toString());
+
         for (GrantedAuthority authority : authorities) {
 
             if (authority.getAuthority().equals("ROLE_DIRECTOR")) {
+
+                Optional<User> byEmail = userRepo.findByEmail(registerDto.getEmail());
+                if(byEmail.isPresent())
+                    return ResponseEntity.status(401).body(new ApiResponse("Email already in use", false));
+
+
 
                 String password = generatePassword();
 
@@ -98,7 +99,7 @@ public class AuthService implements UserDetailsService {
                 User user = new User();
                 user.setFirstName(registerDto.getFirstName());
                 user.setLastName(registerDto.getLastName());
-                user.setEmail(passwordEncoder.encode(registerDto.getEmail()));
+                user.setEmail(registerDto.getEmail());
                 user.setPassword(passwordEncoder.encode(password));
                 user.setRoles(Collections.singleton(roleRepo.findByRoleEnum(RoleEnum.ROLE_MANAGER)));
                 user.setEmailCode(UUID.randomUUID().toString());
@@ -117,14 +118,12 @@ public class AuthService implements UserDetailsService {
                 sendEmail((String) authentication.getCredentials(), "A verifyEmail message has been sent to your manager " + user.getEmail(), "Verify email in manager inbox");
 
                 userRepo.save(user);
-                return ResponseEntity.status(200).body(new ApiResponse("Mr." + authentication.getName() + "  you added manager successfully. Email sent to both your and new manager inbox", true));
+                return ResponseEntity.status(200).body(new ApiResponse("Mr." + userRepo.findByEmail(authentication.getName()).get().getFirstName() + "  you added manager successfully. Email sent to both your and new manager inbox", true));
 
             }
         }
         return ResponseEntity.status(401).body(new ApiResponse("You can't add manager without permission", false));
     }
-
-
 
 
     /**
@@ -148,6 +147,9 @@ public class AuthService implements UserDetailsService {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+            Optional<User> optionalUser = userRepo.findByEmail(authentication.getName());
+             log.info("Email :"+authentication.getName());
+             if(optionalUser.isPresent())
         for (GrantedAuthority authority : authorities) {
             if (authority.getAuthority().equals("ROLE_MANAGER") || authority.getAuthority().equals("ROLE_DIRECTOR")) {
 
@@ -156,9 +158,9 @@ public class AuthService implements UserDetailsService {
                 User user = new User();
                 user.setFirstName(registerDto.getFirstName());
                 user.setLastName(registerDto.getLastName());
-                user.setEmail(passwordEncoder.encode(registerDto.getEmail()));
+                user.setEmail(registerDto.getEmail());
                 user.setPassword(passwordEncoder.encode(password));
-                user.setRoles(Collections.singleton(roleRepo.findByRoleEnum(RoleEnum.ROLE_MANAGER)));
+                user.setRoles(Collections.singleton(roleRepo.findByRoleEnum(RoleEnum.ROLE_EMPLOYEE)));
                 user.setEmailCode(UUID.randomUUID().toString());
 
 
@@ -174,12 +176,13 @@ public class AuthService implements UserDetailsService {
                 sendEmail((String) authentication.getCredentials(), "A verifyEmail message has been sent to new manager " + user.getEmail(), "Verify email in manager inbox");
 
                 userRepo.save(user);
+
                 log.info("New employee saved");
-                return ResponseEntity.status(200).body(new ApiResponse("Mr." + authentication.getName() + "\nSuccessfully you add Employee. Email has been sent to both your and new employee inbox", true));
+                return ResponseEntity.status(200).body(new ApiResponse("Mr." +  userRepo.findByEmail(authentication.getName()).get().getFirstName() + " \n  Successfully added employee. Email has been sent to both your and new employee inbox", true));
 
             }
         }
-        return ResponseEntity.status(401).body(new ApiResponse("You can't add manager without permission", false));
+        return ResponseEntity.status(401).body(new ApiResponse("You can't add employee without permission", false));
     }
 
 
@@ -188,33 +191,21 @@ public class AuthService implements UserDetailsService {
         //todo Use passwordEncode.matches()
         try {
 
+            log.info("Before authenticate User");
+            Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
 
-        log.info("Before authenticate User");
-//            Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
-        log.info("After authenticate User");
-
-        List<User> all = userRepo.findAll();
-        for (User user : all) {
-            if (passwordEncoder.matches(loginDto.getPassword(), user.getPassword())) {
-                if (passwordEncoder.matches(loginDto.getUsername(), user.getUsername())) {
-
-                    String token = jwtProvider.generateToken(loginDto.getUsername(), user.getRoles());
-                    return ResponseEntity.status(201).body(new ApiResponse("Token:", true, token));
-
-                }
+            if (authenticate.isAuthenticated()) {
+                log.info(String.valueOf((authenticate.getAuthorities())));
+                String token = jwtProvider.generateToken(loginDto.getUsername(), authenticate.getAuthorities());
+                log.info("After authenticate User");
+                return ResponseEntity.status(201).body(new ApiResponse("Token:", true, token));
             }
-        }
-
-
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("Username and Password not matched", false));
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("Username and Password not matched", false));
 //            User user = (User) authenticate.getPrincipal();
-
 
         } catch (BadCredentialsException badCredentialsException) {
             log.info("In BadCredentialException catch");
             return ResponseEntity.status(401).body(new ApiResponse("Username and password not found!", false));
-        } catch (UsernameNotFoundException usernameNotFoundException) {
-            return ResponseEntity.status(404).body(new ApiResponse("Your Username  not found", false));
         }
     }
 
@@ -230,9 +221,9 @@ public class AuthService implements UserDetailsService {
      */
     public ResponseEntity<?> verifyEmail(String email, String emailCode) {
         log.info("email="+email+"  ,  emailCode="+emailCode);
-        Optional<User> optionalUser = userRepo.findByEmailCode(emailCode);
+        Optional<User> optionalUser = userRepo.findByEmailAndEmailCode(email,emailCode);
 
-        if (optionalUser.isPresent() & passwordEncoder.matches(email,optionalUser.get().getEmail())) {
+        if (optionalUser.isPresent()) {
             User user = optionalUser.get();
 
             user.setEnabled(true);
@@ -251,8 +242,9 @@ public class AuthService implements UserDetailsService {
      * @param text
      * @return boolean
      */
-    Boolean sendEmail(String sendingEmail, String text, String subject) {
+    Boolean sendEmail(String sendingEmail,String text, String subject) {
         try {
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setFrom("Mr.Javakhir");
         message.setTo(sendingEmail);
@@ -273,10 +265,10 @@ public class AuthService implements UserDetailsService {
      * @return unique password
      */
     String generatePassword() {
-        String all = "ASDFGHJKLQWERTYUIOPZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789!@#$%^&()?{}[]|";
+        String all = "ASDFGHJKLQWERTYUIOPZXCVBNMqwertyuiopasdfghjklzxcvbnm0123456789!@#$%^(){}[]|";
         String pwd = RandomStringUtils.random(15, all);
         for (User user : userRepo.findAll())
-            if (pwd.equals(user.getPassword())) return generatePassword();
+            if (passwordEncoder.matches(pwd,user.getPassword())) return generatePassword();
         return pwd;
     }
 
@@ -284,16 +276,16 @@ public class AuthService implements UserDetailsService {
     /**
      * Override method of UserDetailsService
      *
-     * @param username
+     * @param email
      * @return
      * @throws UsernameNotFoundException
      */
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        //        Optional<User> optionalUser = userRepo.findByUsername(username);
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        //        Optional<User> optionalUser = userRepo.findByUsername(email);
 //        if(optionalUser.isPresent())
 //            return optionalUser.get();
-//        throw new UsernameNotFoundException(username+" not found");
-        return userRepo.findByEmail(username).orElseThrow(() -> new RuntimeException(username + " not found"));
+//        throw new UsernameNotFoundException(email+" not found");
+        return userRepo.findByEmail(email).orElseThrow(() -> new RuntimeException(email + " not found"));
     }
 }
