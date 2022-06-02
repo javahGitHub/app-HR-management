@@ -1,31 +1,24 @@
 package com.pdp.apphrmanagement.controller;
 
-import com.pdp.apphrmanagement.entity.User;
-import com.pdp.apphrmanagement.entity.enums.RoleEnum;
 import com.pdp.apphrmanagement.payload.LoginDto;
 import com.pdp.apphrmanagement.payload.RegisterDto;
 import com.pdp.apphrmanagement.repository.UserRepo;
 import com.pdp.apphrmanagement.service.AuthService;
-import lombok.extern.java.Log;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpRequest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.annotation.Secured;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
-import javax.annotation.security.RolesAllowed;
-import java.util.Optional;
-import java.util.UUID;
 
-@Log
+@Slf4j
 @RestController
 @EnableGlobalMethodSecurity( prePostEnabled = true)
 @RequestMapping("/api/auth")
@@ -44,23 +37,17 @@ public class AuthController {
     @Autowired
     AuthenticationManager authenticationManager;
 
-
+    @PreAuthorize("hasRole('ROLE_DIRECTOR')")
     @PostMapping("/manager/add")
     public ResponseEntity<?> addManager(@RequestBody RegisterDto registerDto){
       return authService.addManagerByDirector(registerDto);
     }
 
-
+    @PreAuthorize("hasAnyRole('ROLE_DIRECTOR','ROLE_MANAGER')")
     @PostMapping("/employee/add")
     public ResponseEntity<?> addEmployee(@RequestBody RegisterDto registerDto){
-
         return authService.addEmployeeByManager(registerDto);
     }
-
-
-
-
-
 
 
     @PostMapping("/login")
@@ -77,24 +64,29 @@ public class AuthController {
 
 
 
-    @GetMapping("/home")
-    public ResponseEntity<?> homePage(){
-        return ResponseEntity.status(200).body("\n\nWelcome to my HR management app of big tech company\n\n");
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @ControllerAdvice(annotations = RestController.class)
+    public class RestResponseEntityExceptionHandler
+            extends ResponseEntityExceptionHandler {
+
+        @ExceptionHandler(value = { IllegalArgumentException.class, IllegalStateException.class })
+        protected ResponseEntity<Object> handleConflict(RuntimeException ex, WebRequest request) {
+            String bodyOfResponse = "You are not allowed to execute";
+            log.info("In RestResponseEntityExceptionHandler");
+            return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.CONFLICT, request);
+        }
     }
-
-
-
-    @PreAuthorize("hasAnyRole('ROLE_DIRECTOR','ROLE_MANAGER','ROLE_ADMIN')")
-    @GetMapping("/infoAll")
-    public ResponseEntity<?> all(){
-        log.info(String.valueOf(SecurityContextHolder.getContext().getAuthentication()));
-        return ResponseEntity.status(200).body(userRepo.findAll());
-
-    }
-
-
-
-
-
 
 }

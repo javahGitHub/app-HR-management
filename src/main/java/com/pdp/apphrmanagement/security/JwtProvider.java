@@ -1,7 +1,6 @@
 package com.pdp.apphrmanagement.security;
 
-import com.pdp.apphrmanagement.entity.Role;
-import com.pdp.apphrmanagement.entity.enums.SecretKey;
+import com.pdp.apphrmanagement.utils.enums.SecretKey;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.springframework.security.core.GrantedAuthority;
@@ -9,7 +8,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collection;
 import java.util.Date;
-import java.util.Set;
 
 @Component
 public class JwtProvider {

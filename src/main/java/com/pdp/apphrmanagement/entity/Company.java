@@ -10,6 +10,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.security.Timestamp;
+import java.util.Date;
 
 @NoArgsConstructor
 @AllArgsConstructor
@@ -26,8 +27,8 @@ public class Company {
 
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
-    private Timestamp createdAt;
+    private Date createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
+    private Date updatedAt;
 }

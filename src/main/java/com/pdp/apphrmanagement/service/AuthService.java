@@ -1,17 +1,14 @@
 package com.pdp.apphrmanagement.service;
 
-import com.pdp.apphrmanagement.entity.Role;
 import com.pdp.apphrmanagement.entity.User;
-import com.pdp.apphrmanagement.entity.enums.RoleEnum;
+import com.pdp.apphrmanagement.utils.enums.RoleEnum;
 import com.pdp.apphrmanagement.payload.ApiResponse;
 import com.pdp.apphrmanagement.payload.LoginDto;
 import com.pdp.apphrmanagement.payload.RegisterDto;
 import com.pdp.apphrmanagement.repository.RoleRepo;
 import com.pdp.apphrmanagement.repository.UserRepo;
 import com.pdp.apphrmanagement.security.JwtProvider;
-import lombok.AllArgsConstructor;
 import lombok.extern.java.Log;
-import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -28,16 +25,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.CharacterData;
 
-import javax.swing.text.Document;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 @Log
 @Service
@@ -45,22 +35,22 @@ public class AuthService implements UserDetailsService {
 
     private static final int ATTEMPTS_LIMIT = 3;
 
-    @Autowired
+    @Autowired(required=true)
     UserRepo userRepo;
 
-    @Autowired
+    @Autowired(required=true)
     RoleRepo roleRepo;
 
-    @Autowired
+    @Autowired(required=true)
     PasswordEncoder passwordEncoder;
 
-    @Autowired
+    @Autowired(required=true)
     AuthenticationManager authenticationManager;
 
-    @Autowired
+    @Autowired(required=true)
     JwtProvider jwtProvider;
 
-    @Autowired
+    @Autowired(required=true)
     JavaMailSender javaMailSender;
 
 
@@ -72,18 +62,19 @@ public class AuthService implements UserDetailsService {
      */
     public ResponseEntity<?> addManagerByDirector(RegisterDto registerDto) {
 
-
-
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         Object principal = authentication.getPrincipal();
         log.info("Authentication principal: " + principal.toString());
-        log.info("Authentication crede: " + authentication.getCredentials().toString());
         log.info("Authentication authorities: " + authentication.getAuthorities().toString());
 
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
 
         for (GrantedAuthority authority : authorities) {
+
+            Optional<User> optionalUser = userRepo.findByEmail(authentication.getName());
+            if(!optionalUser.isPresent())
+                    return ResponseEntity.status(404).body(new ApiResponse("Email not found", false));
 
             if (authority.getAuthority().equals("ROLE_DIRECTOR")) {
 
@@ -99,7 +90,9 @@ public class AuthService implements UserDetailsService {
                 User user = new User();
                 user.setFirstName(registerDto.getFirstName());
                 user.setLastName(registerDto.getLastName());
+                user.setCompany(optionalUser.get().getCompany());
                 user.setEmail(registerDto.getEmail());
+                user.setSalary(registerDto.getSalary());
                 user.setPassword(passwordEncoder.encode(password));
                 user.setRoles(Collections.singleton(roleRepo.findByRoleEnum(RoleEnum.ROLE_MANAGER)));
                 user.setEmailCode(UUID.randomUUID().toString());
@@ -195,10 +188,10 @@ public class AuthService implements UserDetailsService {
             Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword()));
 
             if (authenticate.isAuthenticated()) {
-                log.info(String.valueOf((authenticate.getAuthorities())));
                 String token = jwtProvider.generateToken(loginDto.getUsername(), authenticate.getAuthorities());
                 log.info("After authenticate User");
-                return ResponseEntity.status(201).body(new ApiResponse("Token:", true, token));
+                log.info("Authorities:"+authenticate.getAuthorities());
+                 return ResponseEntity.status(201).body(new ApiResponse("Token:", true, token));
             }
             return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("Username and Password not matched", false));
 //            User user = (User) authenticate.getPrincipal();
@@ -282,7 +275,7 @@ public class AuthService implements UserDetailsService {
      */
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        //        Optional<User> optionalUser = userRepo.findByUsername(email);
+//        Optional<User> optionalUser = userRepo.findByUsername(email);
 //        if(optionalUser.isPresent())
 //            return optionalUser.get();
 //        throw new UsernameNotFoundException(email+" not found");

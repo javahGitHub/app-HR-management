@@ -10,6 +10,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -24,6 +25,7 @@ import java.util.Properties;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Lazy
     @Autowired
@@ -45,12 +47,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .csrf().disable()
                 .httpBasic().disable()
                 .authorizeRequests()
-                .antMatchers("/api/auth/login", "/api/auth/verifyEmail",
-                        "/api/auth/home", "/api/auth/test", "/api/auth/all","/swagger-ui","/swagger-ui.html","/swagger-ui/index.html","/api/auth/addManager","/api/auth/addEmployee").permitAll()
+                .antMatchers("/api/auth/**","/api/auth/manager/**","/api/info/**", "/api/login"  , "/swagger-ui/**", "/swagger-resources/**",
+                        "/v2/api-docs**", "/webjars/**" , "/test").permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
-
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
     }

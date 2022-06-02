@@ -1,7 +1,6 @@
 package com.pdp.apphrmanagement.entity;
 
 
-import com.pdp.apphrmanagement.annotations.Generate16Numbers;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

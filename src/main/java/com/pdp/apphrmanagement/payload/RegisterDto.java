@@ -26,5 +26,6 @@ public class RegisterDto {
     @Email
     private String email;
 
-
+    @NotNull
+    private Double salary;
 }

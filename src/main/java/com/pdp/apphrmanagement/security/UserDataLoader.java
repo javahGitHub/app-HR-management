@@ -1,31 +1,32 @@
 package com.pdp.apphrmanagement.security;
 
+import com.pdp.apphrmanagement.entity.Company;
 import com.pdp.apphrmanagement.entity.User;
-import com.pdp.apphrmanagement.entity.enums.RoleEnum;
+import com.pdp.apphrmanagement.utils.enums.RoleEnum;
+import com.pdp.apphrmanagement.repository.CompanyRepo;
 import com.pdp.apphrmanagement.repository.RoleRepo;
 import com.pdp.apphrmanagement.repository.UserRepo;
 import lombok.extern.java.Log;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import javax.mail.internet.MimeMessage;
 import java.util.Collections;
-import java.util.HashSet;
 
 @Log
 @Component
 public class UserDataLoader implements CommandLineRunner {
 
     @Autowired
-    UserRepo userRepository;
+    UserRepo userRepo;
     @Autowired
     PasswordEncoder passwordEncoder;
     @Autowired
     RoleRepo roleRepo;
+    @Autowired
+    CompanyRepo companyRepo;
     @Autowired
     JavaMailSender javaMailSender;
     @Override
@@ -33,36 +34,32 @@ public class UserDataLoader implements CommandLineRunner {
         loadUserData();
     }
 private void loadUserData() {
+log.info("In loadUserData class");
+    if (userRepo.count() == 1) {
+//        roleRepo.save(new Role(1,RoleEnum.ROLE_DIRECTOR));
+//        roleRepo.save(new Role(2,RoleEnum.ROLE_MANAGER));
+//        roleRepo.save(new Role(3,RoleEnum.ROLE_ADMIN));
+//        roleRepo.save(new Role(4,RoleEnum.ROLE_EMPLOYEE));
 
-        String link = "http://localhost:8008/api/hire/verify?emailCode=" + "emailCode" + "&email=" + "sendingEmail";
-        String body = "<form action=" + link + " method=\"post\">\n" +
-            "<label>Create password for your cabinet</label>" +
-            "<br/><input type=\"text\" name=\"password\" placeholder=\"password\">\n" +
-            "<br/>  <button>Submit</button>\n" +
-            "</form>";
-    try {
-        String from = "balance.060902@gmail.com";
-        MimeMessage message = javaMailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message);
-        helper.setSubject("Confirm email");
-        helper.setFrom(from);
-        helper.setTo("jr2003mit@gmail.com");
-        helper.setText(body, true);
-        javaMailSender.send(message);
-    } catch (Exception ignored) {
-    }
-    if (userRepository.count() == 0) {
-//        userRepository.deleteByEmail("jr2003mit@gmail.com");
-//        User user= new User();
-//        user.setFirstName("Mr.Javohir");
-//        user.setLastName("Rajabov");
-//        user.setEmail("jr2003mit@gmail.com");
-//        user.setPassword(passwordEncoder.encode("123dr"));
-//        user.setEnabled(true);
-//        user.setRoles(Collections.singleton(roleRepo.findByRoleEnum(RoleEnum.ROLE_DIRECTOR)));
-//        userRepository.save(user);
+
+        userRepo.deleteAll();
+        Company company=new Company();
+        company.setName("Google");
+
+        Company save = companyRepo.save(company);
+        userRepo.deleteByEmail("jr2003mit@gmail.com");
+        User user= new User();
+        user.setCompany(save);
+        user.setSalary(5000d);
+        user.setFirstName("Mr.Javohir");
+        user.setLastName("Rajabov");
+        user.setEmail("jr2003mit@gmail.com");
+        user.setPassword(passwordEncoder.encode("123dr"));
+        user.setEnabled(true);
+        user.setRoles(Collections.singleton(roleRepo.findByRoleEnum(RoleEnum.ROLE_DIRECTOR)));
+        userRepo.save(user);
 
     }
-    log.info("Count of Users :"+userRepository.count());
+    log.info("Count of Users :"+userRepo.count());
 }
 }

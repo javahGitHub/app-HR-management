@@ -13,6 +13,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import javax.persistence.*;
 import java.security.Timestamp;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -30,7 +31,7 @@ public class Task {
 
     private String comment;
 
-    private LocalDateTime deadline;
+    private Date deadline;
 
     @ManyToOne
     private User attachedEmployee;
@@ -43,10 +44,10 @@ public class Task {
 
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
-    private Timestamp createdAt;
+    private Date createdAt;
 
     @UpdateTimestamp
-    private Timestamp updatedAt;
+    private Date updatedAt;
 
     @CreatedBy
     private UUID createdBy;
@@ -54,7 +55,7 @@ public class Task {
     @LastModifiedBy
     private UUID updatedBy;
 
-    private Timestamp completedAt;
+    private Date completedAt;
 
 
 }

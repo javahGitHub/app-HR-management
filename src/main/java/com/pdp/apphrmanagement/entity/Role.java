@@ -1,6 +1,6 @@
 package com.pdp.apphrmanagement.entity;
 
-import com.pdp.apphrmanagement.entity.enums.RoleEnum;
+import com.pdp.apphrmanagement.utils.enums.RoleEnum;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
