@@ -1,17 +1,11 @@
 package com.pdp.apphrmanagement.service;
 
-import com.pdp.apphrmanagement.entity.SalaryReport;
-import com.pdp.apphrmanagement.entity.Task;
-import com.pdp.apphrmanagement.entity.TourniquetHistory;
-import com.pdp.apphrmanagement.entity.User;
+import com.pdp.apphrmanagement.entity.*;
 import com.pdp.apphrmanagement.payload.ApiResponse;
 import com.pdp.apphrmanagement.payload.ChangeEmail;
 import com.pdp.apphrmanagement.payload.InfoDto;
 import com.pdp.apphrmanagement.payload.SalaryEditDto;
-import com.pdp.apphrmanagement.repository.SalaryReportRepo;
-import com.pdp.apphrmanagement.repository.TaskRepo;
-import com.pdp.apphrmanagement.repository.TourniquetHistoryRepo;
-import com.pdp.apphrmanagement.repository.UserRepo;
+import com.pdp.apphrmanagement.repository.*;
 import com.pdp.apphrmanagement.utils.RestConstants;
 import com.pdp.apphrmanagement.utils.enums.RoleEnum;
 import lombok.extern.slf4j.Slf4j;
@@ -26,8 +20,11 @@ import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
 import java.sql.Date;
+import java.time.format.DateTimeParseException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Slf4j
 @Service
@@ -42,7 +39,10 @@ public class EmployeeService {
     TourniquetHistoryRepo tourniquetHistoryRepo;
     @Autowired
     TaskRepo taskRepo;
-
+    @Autowired
+    EmployeeSalaryRepo employeeSalaryRepo;
+    @Autowired
+    TourniquetCardRepo tourniquetCardRepo;
 
     public ResponseEntity<?> info(String email,String from,String to) {
         Optional<User> optionalEmployee = userRepo.findByEmail(email);
@@ -63,7 +63,7 @@ public class EmployeeService {
 
             histories.addAll(tourniquetHistoryRepo.findAllByEnteredAtBetween(fromDate, toDate));
 
-            List<Task> tasks = taskRepo.findAllByCompletedAtBetweenAndEmployee_Email(fromDate, toDate, email);
+            List<Task> tasks = taskRepo.findAllByCompletedAtBetweenAndAttachedEmployee_Email(fromDate, toDate, email);
             infoDto.setTasks(tasks);
 
             return ResponseEntity.status(200).body(new ApiResponse("OK", true, infoDto));
@@ -137,7 +137,13 @@ public class EmployeeService {
             if(authority.getAuthority().equals(RoleEnum.ROLE_MANAGER) && optionalUser.get().getRoles().equals(RoleEnum.ROLE_DIRECTOR));
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse<>("You can't edit Director salary",false));
         }
+
+
         User user = optionalUser.get();
+        Optional<TourniquetCard> optionalTourniquetCard = tourniquetCardRepo.findByUserEmail(user.getEmail());
+        TourniquetCard card = optionalTourniquetCard.get();
+        card.setStatus(false);
+        tourniquetCardRepo.save(card);
         user.setEnabled(false);
         return ResponseEntity.status(200).body(new ApiResponse(email+" fired.\nIf you want recover employee" ,true));
 
@@ -166,5 +172,49 @@ public class EmployeeService {
     }
 
 
+    public ResponseEntity<?> infoTask(String email, String from, String to) {
+        Optional<User> optionalUser = userRepo.findByEmail(email);
+        if(!optionalUser.isPresent())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("Such email of employee not found",false));
+
+        try {
+            Timestamp start = Timestamp.valueOf(Date.parse(from) + "00:00:00");
+            Timestamp finish = Timestamp.valueOf(Date.parse(to) + "00:00:00");
+
+            List<Task> completedTasks = taskRepo.findAllByCompletedAtBetweenAndAttachedEmployee_Email(start, finish, email);
+            List<Task> uncompletedTasks = taskRepo.findAllByCreatedAtBetweenAndStatusAndAttachedEmployee_Email(start, finish, 2, email);
+
+            return ResponseEntity.ok("\nCompleted tasks"+completedTasks+"\n\n\nUnCompleted tasks"+uncompletedTasks);
+        }
+        catch (DateTimeParseException e){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse<>("Date parse exception",false));
+        }
+    }
+
+
+    public ResponseEntity<?> infoSalary(String email,String from,String to){
+
+        Optional<User> optionalUser = userRepo.findByEmail(email);
+        if(!optionalUser.isPresent())
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new ApiResponse<>("Such email of employee not found",false));
+
+        //If from date or to date is null return current salary of employee
+        if(from==null || to==null)
+        return ResponseEntity.ok(optionalUser.get().getEmail()+" salary is "+optionalUser.get().getSalary()+" as "+optionalUser.get().getRoles());
+
+
+        try {
+            Timestamp fromDate = Timestamp.valueOf(Date.valueOf(from) + " 00:00:00");
+            Timestamp toDate = Timestamp.valueOf(Date.valueOf(to) + " 00:00:00");
+
+            List<EmployeeSalary> salaries = employeeSalaryRepo.findAllByUpdatedAtBetweenAndEmployeeId(fromDate, toDate, optionalUser.get().getId());
+
+            return ResponseEntity.ok(new ApiResponse("OK", true, salaries));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(new ApiResponse("Date parse exception", false));
+        }
+
+
+    }
 }
 

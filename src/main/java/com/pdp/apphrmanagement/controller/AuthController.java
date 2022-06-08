@@ -76,17 +76,17 @@ public class AuthController {
 
 
 
-
-    @ControllerAdvice(annotations = RestController.class)
-    public class RestResponseEntityExceptionHandler
-            extends ResponseEntityExceptionHandler {
-
-        @ExceptionHandler(value = { IllegalArgumentException.class, IllegalStateException.class })
-        protected ResponseEntity<Object> handleConflict(RuntimeException ex, WebRequest request) {
-            String bodyOfResponse = "You are not allowed to execute";
-            log.info("In RestResponseEntityExceptionHandler");
-            return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.CONFLICT, request);
-        }
-    }
+//
+//    @RestControllerAdvice()
+//    public class RestResponseEntityExceptionHandler
+//            extends ResponseEntityExceptionHandler {
+//
+//        @ExceptionHandler(value = { IllegalArgumentException.class, IllegalStateException.class })
+//        protected ResponseEntity<Object> handleConflict(RuntimeException ex, WebRequest request) {
+//            String bodyOfResponse = "You are not allowed to execute";
+//            log.info("In RestResponseEntityExceptionHandler");
+//            return handleExceptionInternal(ex, bodyOfResponse, new HttpHeaders(), HttpStatus.CONFLICT, request);
+//        }
+//    }
 
 }

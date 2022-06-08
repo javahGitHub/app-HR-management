@@ -30,10 +30,8 @@ public class TourniquetCard {
     @ManyToOne
     private Company company;
 
-    @ManyToOne
+    @OneToOne
     private User user;
-
-    private Long numericId;
 
     @UpdateTimestamp
     @Column

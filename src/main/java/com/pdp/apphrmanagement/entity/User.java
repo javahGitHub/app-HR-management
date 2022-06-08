@@ -58,6 +58,8 @@ public class User implements UserDetails {
 
     private String emailCode;
 
+    private String taskCode;
+
     // →-→-→-→-→-→-→-→-→-→-→-→-→-→-→-→ User fields for Override →-→-→-→-→-→-→-→-→-→-→-→-→-→-→-→
 
     private boolean accountNonExpired=true;

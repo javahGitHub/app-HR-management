@@ -1,6 +1,5 @@
 package com.pdp.apphrmanagement.entity;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,8 +11,6 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -21,31 +18,20 @@ import java.util.UUID;
 @Data
 @Entity
 @EntityListeners(AuditingEntityListener.class)
-public class Task {
+public class EmployeeSalary {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-
-    private String name;
-
-    private String comment;
-
-    private Timestamp deadline;
-
-    private boolean isCompletedAtTheTime=false;
+    private Long id;
 
     @ManyToOne
-    private User attachedEmployee;
+    private User user;
 
-    private Integer status = 1; // 1 -> new;   2 -> working...;    3 -> completed ;    0-> rejected
+    @Column(nullable = false)
+    private Double salary;
 
-    @GeneratedValue
-    private UUID taskCode;
-
-
-    @Column(nullable = false, updatable = false)
     @CreationTimestamp
+    @Column(updatable = false)
     private Timestamp createdAt;
 
     @UpdateTimestamp
@@ -54,10 +40,14 @@ public class Task {
     @CreatedBy
     private UUID createdBy;
 
+    private String month;
+
+    private int year;
+
+    private String verifyingCode;
+
+    private boolean status = false;
+
     @LastModifiedBy
     private UUID updatedBy;
-
-    private Date completedAt;
-
-
 }

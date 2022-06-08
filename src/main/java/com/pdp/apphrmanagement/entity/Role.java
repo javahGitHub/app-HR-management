@@ -1,16 +1,16 @@
 package com.pdp.apphrmanagement.entity;
 
 import com.pdp.apphrmanagement.utils.enums.RoleEnum;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import org.hibernate.Hibernate;
 import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.*;
+import java.util.Objects;
 
-@Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
+@Data
 @Entity
 public class Role implements GrantedAuthority
 
